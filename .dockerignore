@@ -1,0 +1,41 @@
+# 环境变量（通过 Railway 注入）
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# 前端（前端独立部署，不打包进后端镜像）
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# 监控数据（本地开发用）
+prometheus_data/
+grafana_data/
+
+# 上传文件（运行时生成，无需打包）
+static/uploads/*
+!static/uploads/.gitkeep
+static/outputs/*
+!static/outputs/.gitkeep
+
+# 字体文件已复制，保留
+
+# 文档
+*.md
+!README.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml

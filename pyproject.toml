@@ -1,0 +1,21 @@
+[project]
+name = "criaai-backend"
+version = "1.0.0"
+description = "CriaA.I. - E-commerce AI Content Co-creation Platform"
+requires-python = ">=3.13"
+dependencies = [
+    "dashscope>=1.25.13",
+    "fastapi>=0.135.1",
+    "pillow>=12.1.1",
+    "python-multipart>=0.0.22",
+    "uvicorn>=0.41.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic-settings>=2.0.0",
+    "psycopg2-binary>=2.9.11",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "pgvector>=0.3.0",
+    "email-validator>=2.3.0",
+    "prometheus-client>=0.21.0",
+]

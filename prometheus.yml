@@ -1,0 +1,26 @@
+# Prometheus 配置文件
+# 本地使用: docker-compose -f docker-compose.monitoring.yml up
+# Railway: 将 criaai-backend 的 /metrics 端点添加到 Grafana Cloud 的 scrape config
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "criaai-backend"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          service: "criaai-backend"
+          environment: "development"
+
+  # 生产环境 — Railway 部署后使用
+  # - job_name: "criaai-production"
+  #   metrics_path: "/metrics"
+  #   scheme: https
+  #   static_configs:
+  #     - targets: ["your-app.railway.app"]
+  #       labels:
+  #         service: "criaai-backend"
+  #         environment: "production"
