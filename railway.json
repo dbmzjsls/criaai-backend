@@ -1,6 +1,5 @@
 {
   "build": {
-    "builder": "nixpacks",
-    "buildCommand": "uv sync --frozen --no-dev"
+    "builder": "railpack"
   }
 }
