@@ -9,24 +9,41 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-# ── 修复日志：强制覆盖 root logger，防止 uvicorn CLI 覆盖格式 ──────
-# 先清除 root logger 已有的 handler，再重新设置
-root = logging.getLogger()
-root.handlers.clear()
-root.setLevel(logging.INFO)
-
-_fmt = logging.Formatter(
-    fmt="%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-_h = logging.StreamHandler()
-_h.setFormatter(_fmt)
-root.addHandler(_h)
-
-# 也补一刀 uvicorn 的默认配置（Procfile 用 `uvicorn main_app:app` 时会覆盖）
+# ── 修复日志：替换 uvicorn 默认配置，使用标准 logging.Formatter ──────
 import uvicorn.config
-uvicorn.config.LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
-uvicorn.config.LOGGING_CONFIG["formatters"]["access"]["fmt"] = "%(asctime)s %(levelname)-5.5s [%(name)s] %(client_addr)s - \"%(request_line)s\" %(status_code)s"
+uvicorn.config.LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "()": "logging.Formatter",
+            "format": "%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "access": {
+            "()": "logging.Formatter",
+            "format": "%(asctime)s %(levelname)-5.5s [%(name)s] %(client_addr)s - \"%(request_line)s\" %(status_code)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
+        "access": {
+            "formatter": "access",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "uvicorn":        {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "uvicorn.error":  {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "uvicorn.access": {"handlers": ["access"],  "level": "INFO", "propagate": False},
+    },
+}
 
 # 导入路由
 from api.routes import auth, products, copywriting, images, assets, videos, media, dashboard, search, moderation, pipeline
