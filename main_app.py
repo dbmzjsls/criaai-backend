@@ -9,38 +9,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-# ── 显式日志配置（修复 uvicorn 默认格式覆盖问题） ──────────────────
-LOGGING_CONFIG = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "default": {
-            "format": "%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-        },
-        "access": {
-            "format": "%(asctime)s %(levelname)-5.5s [%(name)s] %(client_addr)s - \"%(request_line)s\" %(status_code)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-        },
-    },
-    "handlers": {
-        "default": {
-            "formatter": "default",
-            "class": "logging.StreamHandler",
-            "stream": "ext://sys.stdout",
-        },
-        "access": {
-            "formatter": "access",
-            "class": "logging.StreamHandler",
-            "stream": "ext://sys.stdout",
-        },
-    },
-    "loggers": {
-        "uvicorn":        {"handlers": ["default"], "level": "INFO", "propagate": False},
-        "uvicorn.error":  {"handlers": ["default"], "level": "INFO", "propagate": False},
-        "uvicorn.access": {"handlers": ["access"],  "level": "INFO", "propagate": False},
-    },
-}
+# ── 修复日志：强制覆盖 root logger，防止 uvicorn CLI 覆盖格式 ──────
+# 先清除 root logger 已有的 handler，再重新设置
+root = logging.getLogger()
+root.handlers.clear()
+root.setLevel(logging.INFO)
+
+_fmt = logging.Formatter(
+    fmt="%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+_h = logging.StreamHandler()
+_h.setFormatter(_fmt)
+root.addHandler(_h)
+
+# 也补一刀 uvicorn 的默认配置（Procfile 用 `uvicorn main_app:app` 时会覆盖）
+import uvicorn.config
+uvicorn.config.LOGGING_CONFIG["formatters"]["default"]["fmt"] = "%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s"
+uvicorn.config.LOGGING_CONFIG["formatters"]["access"]["fmt"] = "%(asctime)s %(levelname)-5.5s [%(name)s] %(client_addr)s - \"%(request_line)s\" %(status_code)s"
 
 # 导入路由
 from api.routes import auth, products, copywriting, images, assets, videos, media, dashboard, search, moderation, pipeline
@@ -50,9 +36,6 @@ from core.config import settings
 from core.database import init_db, engine, get_db
 from core.monitoring import setup_monitoring
 from sqlalchemy import text
-
-# 模块加载时立即应用日志配置（Procfile 和 python main_app.py 都生效）
-logging.config.dictConfig(LOGGING_CONFIG)
 
 logger = logging.getLogger(__name__)
 
@@ -132,4 +115,4 @@ if __name__ == "__main__":
     import uvicorn
     logger.info("千绘智能—电商内容共创平台启动中...")
     logger.info(f"API 文档: /docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=LOGGING_CONFIG)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
