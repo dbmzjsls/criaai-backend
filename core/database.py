@@ -2,7 +2,7 @@
 数据库连接模块
 使用 SQLAlchemy 管理数据库连接和会话
 """
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
@@ -47,4 +47,8 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db():
     """初始化数据库（创建所有表）"""
+    # 自动启用 pgvector 扩展（无需手动 CLI 操作）
+    with engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        conn.commit()
     Base.metadata.create_all(bind=engine)

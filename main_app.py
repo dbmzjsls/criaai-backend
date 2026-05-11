@@ -14,8 +14,9 @@ from api.routes import auth, products, copywriting, images, assets, videos, medi
 
 # 导入配置
 from core.config import settings
-from core.database import init_db, get_db
+from core.database import init_db, engine, get_db
 from core.monitoring import setup_monitoring
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,17 @@ app.include_router(media.router)
 app.include_router(search.router)
 app.include_router(moderation.router)
 app.include_router(pipeline.router)
+
+# 启动时自动启用 pgvector 扩展（无需 Railway CLI）
+@app.on_event("startup")
+async def enable_pgvector():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
+        logger.info("pgvector extension enabled (or already present)")
+    except Exception as e:
+        logger.warning(f"Could not enable pgvector extension: {e}")
 
 # 安装 Prometheus 监控 (HTTP 中间件 + /metrics 端点)
 setup_monitoring(app)
