@@ -16,6 +16,9 @@ from uvicorn.config import LOGGING_CONFIG
 # ── 深拷贝默认日志配置 ──────────────────────────────────────────────
 log_config = copy.deepcopy(LOGGING_CONFIG)
 
+# ── 强制关闭已存在的 logger，防止 basicConfig() 等"幽灵"格式残留 ──
+log_config["disable_existing_loggers"] = True
+
 # ── 保留 Uvicorn 原生颜色 ──────────────────────────────────────────
 log_config["use_colors"] = True
 log_config["formatters"]["default"]["use_colors"] = True
