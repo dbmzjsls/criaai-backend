@@ -3,6 +3,7 @@
 策略模式：RuleChecker 抽象基类 + 可插拔检查器
 """
 import json
+import re
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
@@ -22,7 +23,57 @@ class RuleChecker(ABC):
 
 
 class KeywordChecker(RuleChecker):
-    """关键词黑名单检查器"""
+    """
+    关键词黑名单检查器 - 智能词边界匹配
+
+    策略：
+      - ASCII 关键词：使用 \\b 词边界，防止 "drug" 误伤 "drugstore"
+      - CJK 关键词（单字）：跳过 —— 单字杀伤力太大（"核"→"核心"）
+      - CJK 关键词（多字）：子串匹配，中文天然不易误伤复合词
+      - 含空格/符号的变体（"d r u g"）：直接子串匹配
+    """
+
+    # 预编译常见绕词变体（空格/符号分隔），不走词边界
+    _EVASION_PATTERN = re.compile(r'\s+|\.+|-+')
+
+    @staticmethod
+    def _is_cjk_single_char(kw: str) -> bool:
+        """判断是否为单独一个 CJK 字符（不含任何其他字符）"""
+        if len(kw) != 1:
+            return False
+        cp = ord(kw)
+        return (
+            (0x4E00 <= cp <= 0x9FFF)   # CJK Unified
+            or (0x3400 <= cp <= 0x4DBF)  # CJK Ext-A
+            or (0xF900 <= cp <= 0xFAFF)  # CJK Compat
+        )
+
+    @staticmethod
+    def _is_pure_ascii(kw: str) -> bool:
+        """判断关键词是否纯 ASCII（字母/数字）"""
+        return kw.isascii() and all(c.isalnum() or c in ' ' for c in kw)
+
+    def _kw_matches(self, kw: str, text_lower: str) -> bool:
+        """判断关键词是否命中文本"""
+        kw_lower = kw.lower()
+
+        # 单字 CJK → 跳过（杀伤力太大，如 "核"→"核心"、"毒"→"病毒"）
+        if self._is_cjk_single_char(kw_lower):
+            return False
+
+        # 含空格/符号的绕词变体 → 规范化后子串匹配（"d r u g" → "drug"）
+        if ' ' in kw_lower or '.' in kw_lower or '-' in kw_lower:
+            normalized = self._EVASION_PATTERN.sub('', kw_lower)
+            text_normalized = self._EVASION_PATTERN.sub('', text_lower)
+            return normalized in text_normalized
+
+        # 纯 ASCII 关键词 → 词边界匹配（\bdrug\b 不匹配 drugstore）
+        if self._is_pure_ascii(kw_lower):
+            pattern = r'(?<![a-z])' + re.escape(kw_lower) + r'(?![a-z])'
+            return bool(re.search(pattern, text_lower))
+
+        # 中文多字及其他 → 子串匹配（中文无英文式复合词问题）
+        return kw_lower in text_lower
 
     def check(self, text: str, rules: list[PlatformRule]) -> list[Violation]:
         violations = []
@@ -39,7 +90,7 @@ class KeywordChecker(RuleChecker):
             for kw in keywords:
                 if not kw:
                     continue
-                if kw.lower() in text_lower:
+                if self._kw_matches(kw, text_lower):
                     violations.append(Violation(
                         rule_id=rule.id,
                         platform=rule.platform,
