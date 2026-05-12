@@ -19,5 +19,5 @@ RUN uv sync --frozen --no-dev
 # Copy application code (excluding .env via .dockerignore)
 COPY . .
 
-# Run database migrations then start server
-CMD uv run alembic upgrade head && uv run uvicorn main_app:app --host 0.0.0.0 --port ${PORT:-8000}
+# Run database migrations then start server via start.py (custom logging)
+CMD uv run alembic upgrade head && uv run python start.py
