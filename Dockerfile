@@ -19,5 +19,9 @@ RUN uv sync --frozen --no-dev
 # Copy application code (excluding .env via .dockerignore)
 COPY . .
 
+# Purge stale __pycache__ to ensure no old .pyc bytecode survives
+RUN find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+RUN find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
 # Run database migrations then start server via start.py (custom logging)
 CMD uv run alembic upgrade head && uv run python start.py

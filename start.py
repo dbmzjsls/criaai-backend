@@ -9,11 +9,6 @@ import sys
 import uvicorn
 from uvicorn.config import LOGGING_CONFIG
 
-# ── 脏代码：验证 Railway 是否跑的是这份新代码 ──────────────────────
-print("=" * 56)
-print("RAILWAY_DEPLOY_DEBUG: VERSION 3.0 — NUCLEAR LOGGING")
-print("=" * 56, flush=True)
-
 # ── 核武级清空：杀死所有已存在的 logger handler ──────────────────
 for name in logging.root.manager.loggerDict:
     logger = logging.getLogger(name)
@@ -36,14 +31,14 @@ log_config["use_colors"] = True
 log_config["formatters"]["default"]["use_colors"] = True
 log_config["formatters"]["access"]["use_colors"] = True
 
-# ── 自定义格式：醒目标识 + 时间 + 等级 + 模块 + 消息 ──────────────
+# ── 自定义格式：时间 + 等级 + 模块 + 消息 ──────────────────────────
 log_config["formatters"]["default"]["fmt"] = (
-    "!!! SUCCESS !!! %(asctime)s | %(levelprefix)s | %(message)s"
+    "%(asctime)s | %(levelprefix)s [%(name)s] %(message)s"
 )
 log_config["formatters"]["default"]["datefmt"] = "%Y-%m-%d %H:%M:%S"
 
 log_config["formatters"]["access"]["fmt"] = (
-    "!!! ACCESS !!! %(asctime)s | %(levelprefix)s | "
+    "%(asctime)s | %(levelprefix)s | "
     '%(client_addr)s — "%(request_line)s" %(status_code)s'
 )
 log_config["formatters"]["access"]["datefmt"] = "%Y-%m-%d %H:%M:%S"
