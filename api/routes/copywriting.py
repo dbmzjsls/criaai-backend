@@ -19,6 +19,65 @@ from services.vector_service import build_rag_context
 
 router = APIRouter(prefix="/api/v1/copywriting", tags=["文案生成"])
 
+logger = logging.getLogger(__name__)
+
+MAX_RETRY = 1  # 输出审核不通过时最多重试次数
+
+
+async def _sanitize_output(
+    db: Session,
+    platform: str,
+    content: str,
+    keyword: str,
+    language_display: str,
+    style: str,
+    platform_name: str,
+    base_prompt: str,
+) -> str:
+    """
+    输出净化 + 智能重试
+
+    1. 先尝试自动净化（违规词 → ***）
+    2. 如果净化比例过高（>30%），自动重试并告知 AI 避免哪些词
+    3. 重试后仍不合格 → 返回净化版本，不给用户抛错
+    """
+    for attempt in range(MAX_RETRY + 1):
+        result = content_interceptor.intercept_output(
+            db=db, platform=platform, generated_content=content,
+        )
+
+        # 无违规 → 直接返回
+        if result["censored_count"] == 0:
+            return content
+
+        # 不需要重试，或已经是最后一次尝试 → 返回净化版
+        if not result["needs_retry"] or attempt >= MAX_RETRY:
+            if result["censored_count"] > 0:
+                logger.info(
+                    f"Output auto-censored: {result['censored_count']} occurrences, "
+                    f"keywords: {result['blocked_keywords']}"
+                )
+            return result["content"]
+
+        # 需要重试：告知 AI 避免使用特定词汇
+        logger.info(
+            f"Output needs retry (attempt {attempt + 1}/{MAX_RETRY}), "
+            f"keywords: {result['blocked_keywords']}"
+        )
+        avoid_list = "、".join(result["blocked_keywords"])
+        retry_prompt = (
+            f"{base_prompt}\n\n"
+            f"【重要提醒】你的上一次回复中包含了不适合在{platform_name}平台展示的词汇。"
+            f"请在本次回复中严格避免使用以下词汇或类似表述：{avoid_list}。"
+            f"重新生成一份符合{platform_name}平台合规要求的{style}风格{language_display}营销文案。"
+        )
+        content = await asyncio.to_thread(
+            copywriting_service._call_dashscope_api, retry_prompt
+        )
+
+    # fallback：返回最后一次净化结果
+    return result["content"]
+
 
 class CopywritingRequest(BaseModel):
     """文案生成请求模型"""
@@ -130,42 +189,16 @@ async def generate_copywriting(
         prompt = "\n".join(prompt_parts)
         content = await asyncio.to_thread(copywriting_service._call_dashscope_api, prompt)
 
-        # ====== Step 4: 输出审核（生成后） ======
-        # 检查 LLM 输出是否命中审核规则
-        try:
-            output_result = content_interceptor.intercept_text(
-                db=db,
-                platform=platform_lower,
-                text_content=content,
-            )
-            if not output_result.passed:
-                blocked_keywords = [v.matched_keyword for v in output_result.violations if v.severity == "block"]
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={
-                        "error": "生成内容审核未通过",
-                        "message": f"AI 生成的内容包含平台禁止的敏感词：{', '.join(blocked_keywords)}。请尝试更换产品关键词后重新生成。",
-                        "stage": "output_check",
-                        "blocked_keywords": blocked_keywords,
-                        "violations": [
-                            {
-                                "category": v.category,
-                                "severity": v.severity,
-                                "matched_keyword": v.matched_keyword,
-                                "description": v.description,
-                            }
-                            for v in output_result.violations
-                            if v.severity == "block"
-                        ]
-                    }
-                )
-        except HTTPException:
-            raise
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Output moderation check failed (allowing content through): {e}")
+        # ====== Step 4: 输出审核（自动净化 + 智能重试） ======
+        output = await _sanitize_output(
+            db=db, platform=platform_lower, content=content,
+            keyword=request.keyword, language_display=language_display,
+            style=request.style, platform_name=request.platform,
+            base_prompt=prompt,
+        )
 
         return CopywritingResponse(
-            content=content,
+            content=output,
             language=request.language,
             style=request.style,
             platform=request.platform,
