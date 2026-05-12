@@ -149,8 +149,8 @@ export default function Layout() {
               <UserCircleIcon className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white/70 text-xs font-medium truncate">管理员</p>
-              <p className="text-white/20 text-[10px] truncate">admin@criaai.com</p>
+              <p className="text-white/70 text-xs font-medium truncate">测试用户</p>
+              <p className="text-white/20 text-[10px] truncate">test@criaai.com</p>
             </div>
           </div>
         </div>
