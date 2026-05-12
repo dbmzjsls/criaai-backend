@@ -23,5 +23,5 @@ COPY . .
 RUN find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 RUN find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
-# Run database migrations, seed moderation rules, import product embeddings from Olist dataset, then start server
-CMD uv run alembic upgrade head && uv run python scripts/seed_moderation_rules.py --reset && uv run python scripts/seed_embeddings.py --csv data/olist_products_dataset.csv --limit 5000 && uv run python start.py
+# Run database migrations, seed moderation rules, then start server
+CMD uv run alembic upgrade head && uv run python scripts/seed_moderation_rules.py --reset && uv run python start.py
