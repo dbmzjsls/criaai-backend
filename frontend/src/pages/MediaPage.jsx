@@ -5,6 +5,7 @@ import NeonGlowCard from '../components/NeonGlowCard.jsx'
 import PageHeader from '../components/PageHeader.jsx'
 import NeonInput from '../components/NeonInput.jsx'
 import axiosInstance from '../api/axios.js'
+import { resolveMediaUrl } from '../utils/resolveMediaUrl.js'
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
 
@@ -80,9 +81,9 @@ export default function MediaPage() {
               <div className="aspect-square bg-space-700/50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-white/5">
                 {item.file_url || item.url ? (
                   item.media_type === 'video' ? (
-                    <video src={item.file_url || item.url} className="w-full h-full object-cover rounded-xl" />
+                    <video src={resolveMediaUrl(item.file_url || item.url)} className="w-full h-full object-cover rounded-xl" />
                   ) : (
-                    <img src={item.file_url || item.url} alt={item.filename} className="w-full h-full object-cover rounded-xl" />
+                    <img src={resolveMediaUrl(item.file_url || item.url)} alt={item.filename} className="w-full h-full object-cover rounded-xl" />
                   )
                 ) : (
                   <FilmStrip size={32} className="text-white/10" />

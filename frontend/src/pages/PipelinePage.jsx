@@ -12,6 +12,7 @@ import ScanningLine from '../components/ScanningLine.jsx'
 import EnergyBar from '../components/EnergyBar.jsx'
 import NeonGlowCard from '../components/NeonGlowCard.jsx'
 import { startPipeline, getTaskStatus } from '../api/pipeline.js'
+import { resolveMediaUrl } from '../utils/resolveMediaUrl.js'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }
 const item = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35 } } }
@@ -353,12 +354,12 @@ export default function PipelinePage() {
                         {config.key === 'image' && (
                           <div className="relative rounded-lg overflow-hidden bg-space-800">
                             <img
-                              src={stepState.result.image_url}
+                              src={resolveMediaUrl(stepState.result.image_url)}
                               alt="Generated"
                               className="w-full h-28 object-cover rounded-lg"
                             />
                             <button
-                              onClick={() => downloadFile(stepState.result.image_url, `image-${Date.now()}.png`)}
+                              onClick={() => downloadFile(resolveMediaUrl(stepState.result.image_url), `image-${Date.now()}.png`)}
                               className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80 transition-colors"
                             >
                               <DownloadSimple size={12} className="text-white" />
@@ -368,12 +369,12 @@ export default function PipelinePage() {
                         {config.key === 'video' && (
                           <div className="relative rounded-lg overflow-hidden bg-space-800">
                             <video
-                              src={stepState.result.video_url}
+                              src={resolveMediaUrl(stepState.result.video_url)}
                               controls
                               className="w-full h-28 object-cover rounded-lg"
                             />
                             <button
-                              onClick={() => downloadFile(stepState.result.video_url, `video-${Date.now()}.mp4`)}
+                              onClick={() => downloadFile(resolveMediaUrl(stepState.result.video_url), `video-${Date.now()}.mp4`)}
                               className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80 transition-colors"
                             >
                               <DownloadSimple size={12} className="text-white" />

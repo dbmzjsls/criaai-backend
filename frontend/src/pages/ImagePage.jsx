@@ -7,6 +7,7 @@ import PillSelector from '../components/PillSelector.jsx'
 import NeonSlider from '../components/NeonSlider.jsx'
 import ScanningLine from '../components/ScanningLine.jsx'
 import axiosInstance from '../api/axios.js'
+import { resolveMediaUrl } from '../utils/resolveMediaUrl.js'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }
@@ -30,7 +31,7 @@ export default function ImagePage() {
       const url = res.data.image_url || res.data.url
       if (!url) throw new Error('No image URL returned')
       if (url.includes('<html') || url.includes('<!DOCTYPE')) throw new Error('Server error')
-      setImageUrl(url)
+      setImageUrl(resolveMediaUrl(url))
     } catch (e) {
       const detail = e.response?.data?.detail
       const detailMsg = (typeof detail === 'object' && detail) ? detail.message : detail

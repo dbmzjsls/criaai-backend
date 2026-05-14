@@ -8,6 +8,7 @@ import PillSelector from '../components/PillSelector.jsx'
 import ScanningLine from '../components/ScanningLine.jsx'
 import EnergyBar from '../components/EnergyBar.jsx'
 import axiosInstance from '../api/axios.js'
+import { resolveMediaUrl } from '../utils/resolveMediaUrl.js'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }
@@ -43,7 +44,7 @@ export default function VideoPage() {
       const res = await axiosInstance.post('/v1/videos/upload-image', form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      setUploadedImgUrl(res.data.img_url)
+      setUploadedImgUrl(resolveMediaUrl(res.data.img_url))
     } catch (e) {
       const detail = e.response?.data?.detail
       setError('上传失败：' + ((typeof detail === 'object' && detail) ? detail.message : (detail || e.message)))
@@ -62,7 +63,7 @@ export default function VideoPage() {
       }, { timeout: 600000 })
       const url = res.data.video_url || res.data.url
       if (!url) throw new Error('No video URL returned')
-      setVideoUrl(url)
+      setVideoUrl(resolveMediaUrl(url))
     } catch (e) {
       const detail = e.response?.data?.detail
       const detailMsg = (typeof detail === 'object' && detail) ? detail.message : detail

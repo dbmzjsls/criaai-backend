@@ -97,12 +97,11 @@ async def start_pipeline(
 
     pipeline_service.store.create(task_id)
 
-    # 使用 asyncio.create_task 确保任务在请求返回后继续执行
+    # asyncio.to_thread() 返回 coroutine，asyncio.create_task 可正确调度
+    # 之前 run_in_executor 返回 Future，Python 3.13 严格类型检查导致 TypeError
     params = request.model_dump()
     asyncio.create_task(
-        asyncio.get_event_loop().run_in_executor(
-            None, pipeline_service.run_pipeline_sync, db, params, task_id
-        )
+        asyncio.to_thread(pipeline_service.run_pipeline_sync, params, task_id)
     )
 
     logger.info(f"Pipeline started: task_id={task_id}, keyword={request.keyword}")

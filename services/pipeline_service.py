@@ -118,7 +118,7 @@ class PipelineService:
             self._image_service = ImageService()
         return self._image_service
 
-    def run_pipeline_sync(self, db: Session, params: dict, task_id: str):
+    def run_pipeline_sync(self, params: dict, task_id: str, db: Optional[Session] = None):
         """
         同步执行流水线（运行在线程池中）
 
@@ -128,9 +128,9 @@ class PipelineService:
         3. 用图片生成视频 (wan2.6-i2v)
 
         Args:
-            db: 数据库会话
             params: 流水线参数
             task_id: 任务 ID
+            db: 数据库会话（可选，后台线程不应接收请求级别的 session）
         """
         store = self.store
         store.update(task_id, status="running")

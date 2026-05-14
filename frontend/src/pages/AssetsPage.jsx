@@ -5,6 +5,7 @@ import NeonGlowCard from '../components/NeonGlowCard.jsx'
 import PageHeader from '../components/PageHeader.jsx'
 import NeonInput from '../components/NeonInput.jsx'
 import axiosInstance from '../api/axios.js'
+import { resolveMediaUrl } from '../utils/resolveMediaUrl.js'
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
 
@@ -66,7 +67,7 @@ export default function AssetsPage() {
                 <NeonGlowCard hover color={c} className="p-3">
                   <div className="aspect-square bg-space-700/50 rounded-xl mb-2 overflow-hidden flex items-center justify-center border border-white/5">
                     {asset.url || asset.file_url ? (
-                      <img src={asset.url || asset.file_url} alt={asset.name} className="w-full h-full object-cover rounded-xl" />
+                      <img src={resolveMediaUrl(asset.url || asset.file_url)} alt={asset.name} className="w-full h-full object-cover rounded-xl" />
                     ) : (
                       <Folder size={32} className="text-white/10" />
                     )}
