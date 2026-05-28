@@ -5,6 +5,12 @@
 
 ---
 
+## 项目定位
+
+CriaAI 是一个面向竞赛展示和面试展示的 AI 应用 Demo，重点证明从内容审核、RAG 检索、文案生成、图片/视频生成到 Railway 部署的完整链路可以跑通。当前版本不以真实商业多租户 SaaS 为目标，产品管理和用户体系主要服务于演示流程。
+
+---
+
 ## 核心亮点：RAG 增强检索
 
 平台通过**检索增强生成（Retrieval-Augmented Generation）**架构，将向量语义检索与 LLM 生成深度融合，确保 AI 产出精准匹配品类特征和用户意图。
@@ -76,6 +82,8 @@
 - **PostgreSQL + pgvector** — 数据库 + 向量存储 + 余弦相似度搜索
 - **Prometheus + Grafana** — 监控
 
+> 说明：本项目的 RAG 链路为轻量自实现，核心是 DashScope Embedding + PostgreSQL/pgvector 语义检索 + Prompt 上下文注入；没有强依赖 LangChain 框架，便于展示底层链路。
+
 ### 前端
 - **React 18** + Vite 5
 - **Tailwind CSS** — Cyberpunk / Neon 风格
@@ -118,6 +126,33 @@ npm run dev
 ```
 
 浏览器访问 http://localhost:3005
+
+---
+
+
+## 上线验证
+
+项目已按 Railway 部署方式组织，适合展示“代码仓库 → 容器构建 → 数据库迁移 → API 服务”的上线链路：
+
+- `Dockerfile` 使用 Python 3.13 slim + uv 安装依赖
+- `Procfile` / `Dockerfile CMD` 执行 Alembic 迁移、初始化审核规则并启动服务
+- `/health` 用于验证 API 与数据库连通性
+- `/metrics` 暴露 Prometheus 指标，便于展示基础可观测性
+
+Fork 后本地验证：
+
+```bash
+uv sync
+uv run alembic upgrade head
+uv run uvicorn main_app:app --reload --port 8000
+```
+
+常用验证入口：
+
+- `GET /health` — 服务和数据库健康检查
+- `GET /docs` — FastAPI OpenAPI 文档
+- `POST /api/v1/copywriting/generate` — RAG 增强文案生成
+- `POST /api/v1/search/products` — 向量语义搜索
 
 ---
 
